@@ -21,6 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"message": "AB Test Calculator API"}
+
 class ABTestInput(BaseModel):
     a_success: int
     a_total: int
@@ -52,7 +56,9 @@ def calculate_abtest(data: ABTestInput):
     p1 = data.a_success / data.a_total
     p2 = data.b_success / data.b_total
     p_pool = (data.a_success + data.b_success) / (data.a_total + data.b_total)
-    se = np.sqrt(p_pool * (1 - p_pool) * (1/data.a_total + 1/data.b_total))
+    # Защита от отрицательных значений под корнем
+    se_term = p_pool * (1 - p_pool) * (1/data.a_total + 1/data.b_total)
+    se = np.sqrt(max(0, se_term)) if se_term > 0 else 0
     z = (p2 - p1) / se if se > 0 else 0
     p_value = 2 * (1 - norm.cdf(abs(z)))
     significant = p_value < 0.05
