@@ -77,7 +77,8 @@ function App() {
   const handleCalculate = async () => {
     try {
       setError('')
-      const response = await axios.post('https://abtest-calculator.onrender.com/calculate', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://abtest-calculator.onrender.com'
+      const response = await axios.post(`${backendUrl}/calculate`, {
         a_success: parseInt(controlSuccess),
         a_total: parseInt(controlTotal),
         b_success: parseInt(variantSuccess),
