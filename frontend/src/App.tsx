@@ -87,21 +87,24 @@ function App() {
   }
 
   const chartData = result ? {
-    labels: result.x_values.map(x => (x * 100).toFixed(1) + '%'),
     datasets: [
       {
         label: 'Контрольная группа',
-        data: result.a_distribution,
+        data: result.x_values.map((x, i) => ({ x: x * 100, y: result.a_distribution[i] })),
         borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        tension: 0.4
+        tension: 0.4,
+        fill: false,
+        pointRadius: 0
       },
       {
         label: 'Тестовая группа',
-        data: result.b_distribution,
+        data: result.x_values.map((x, i) => ({ x: x * 100, y: result.b_distribution[i] })),
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
-        tension: 0.4
+        tension: 0.4,
+        fill: false,
+        pointRadius: 0
       }
     ]
   } : null
@@ -118,22 +121,25 @@ function App() {
       },
     },
     scales: {
+      x: {
+        type: 'linear' as const,
+        title: {
+          display: true,
+          text: 'Конверсия, %'
+        },
+        min: 0,
+        max: 5,
+        ticks: {
+          callback: function(tickValue: number | string) {
+            return `${Number(tickValue).toFixed(2)}%`;
+          }
+        }
+      },
       y: {
         beginAtZero: true,
         title: {
           display: true,
           text: 'Нормализованная плотность вероятности'
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Конверсия'
-        },
-        ticks: {
-          callback: function(tickValue: number | string) {
-            return `${(Number(tickValue) * 100).toFixed(1)}%`
-          }
         }
       }
     }
