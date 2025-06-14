@@ -52,13 +52,27 @@ class ABTestResult(BaseModel):
 
 @app.post("/calculate", response_model=ABTestResult)
 def calculate_abtest(data: ABTestInput):
+    # Проверка входных данных
+    if data.a_total <= 0 or data.b_total <= 0:
+        raise ValueError("Total values must be positive")
+    if data.a_success < 0 or data.b_success < 0:
+        raise ValueError("Success values cannot be negative")
+    if data.a_success > data.a_total or data.b_success > data.b_total:
+        raise ValueError("Success values cannot be greater than total values")
+
     # Частотный подход (z-тест для пропорций)
     p1 = data.a_success / data.a_total
     p2 = data.b_success / data.b_total
     p_pool = (data.a_success + data.b_success) / (data.a_total + data.b_total)
+    print(f"Debug values: p1={p1}, p2={p2}, p_pool={p_pool}")
+    print(f"Input data: a_success={data.a_success}, a_total={data.a_total}, b_success={data.b_success}, b_total={data.b_total}")
+    
     # Защита от отрицательных значений под корнем
     se_term = p_pool * (1 - p_pool) * (1/data.a_total + 1/data.b_total)
+    print(f"SE term before sqrt: {se_term}")
     se = np.sqrt(max(0, se_term)) if se_term > 0 else 0
+    print(f"Final SE: {se}")
+    
     z = (p2 - p1) / se if se > 0 else 0
     p_value = 2 * (1 - norm.cdf(abs(z)))
     significant = p_value < 0.05
