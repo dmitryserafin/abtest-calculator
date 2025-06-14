@@ -12,7 +12,8 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  CircularProgress
 } from '@mui/material'
 import axios from 'axios'
 import {
@@ -66,6 +67,7 @@ function App() {
   const [variantTotal, setVariantTotal] = useState('')
   const [result, setResult] = useState<ABTestResult | null>(null)
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   // --- Калькулятор размера выборки ---
   const [sampleBaseline, setSampleBaseline] = useState(20)
@@ -77,6 +79,7 @@ function App() {
   const handleCalculate = async () => {
     try {
       setError('')
+      setIsLoading(true)
       const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://abtest-calculator.onrender.com'
       const response = await axios.post(`${backendUrl}/calculate`, {
         a_success: parseInt(controlSuccess),
@@ -88,6 +91,8 @@ function App() {
     } catch (err) {
       setError('Ошибка при расчете. Проверьте введенные данные.')
       console.error(err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -277,9 +282,16 @@ function App() {
             <Button 
               variant="contained" 
               onClick={handleCalculate}
-              disabled={!controlSuccess || !controlTotal || !variantSuccess || !variantTotal}
+              disabled={!controlSuccess || !controlTotal || !variantSuccess || !variantTotal || isLoading}
             >
-              Рассчитать
+              {isLoading ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CircularProgress size={20} color="inherit" />
+                  <span>Расчет...</span>
+                </Box>
+              ) : (
+                'Рассчитать'
+              )}
             </Button>
           </Box>
         </Paper>
@@ -290,7 +302,13 @@ function App() {
           </Typography>
         )}
 
-        {result && (
+        {isLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        {result && !isLoading && (
           <Paper elevation={3} sx={{ p: 3 }}>
             <Typography variant="h5" gutterBottom>
               Результаты анализа
