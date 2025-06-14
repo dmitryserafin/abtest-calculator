@@ -28,6 +28,7 @@ import {
   BarElement
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { jStat } from 'jstat'
 
 ChartJS.register(
   CategoryScale,
@@ -80,7 +81,10 @@ function App() {
     try {
       setError('')
       setIsLoading(true)
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://abtest-calculator.onrender.com'
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const backendUrl = isLocal
+        ? 'http://localhost:8000'
+        : (import.meta.env.VITE_BACKEND_URL || 'https://abtest-calculator.onrender.com');
       const response = await axios.post(`${backendUrl}/calculate`, {
         a_success: parseInt(controlSuccess),
         a_total: parseInt(controlTotal),
@@ -222,6 +226,77 @@ function App() {
       }
     }
   }
+
+  // --- График Beta-распределений для исходных данных ---
+  let betaChartData = null;
+  if (controlTotal && variantTotal && controlSuccess && variantSuccess) {
+    const aAlpha = Number(controlSuccess) + 1;
+    const aBeta = Number(controlTotal) - Number(controlSuccess) + 1;
+    const bAlpha = Number(variantSuccess) + 1;
+    const bBeta = Number(variantTotal) - Number(variantSuccess) + 1;
+    const mean = (Number(controlSuccess) + Number(variantSuccess)) / (Number(controlTotal) + Number(variantTotal));
+    const xMin = Math.max(0, mean - 0.01);
+    const xMax = Math.min(1, mean + 0.01);
+    const steps = 300;
+    const x = [];
+    const yA: number[] = [];
+    const yB: number[] = [];
+    for (let i = 0; i <= steps; i++) {
+      const val = xMin + (xMax - xMin) * (i / steps);
+      x.push(val);
+      yA.push(jStat.beta.pdf(val, aAlpha, aBeta));
+      yB.push(jStat.beta.pdf(val, bAlpha, bBeta));
+    }
+    betaChartData = {
+      datasets: [
+        {
+          label: 'Контрольная группа (бета prior)',
+          data: x.map((val, i) => ({ x: val * 100, y: yA[i] })),
+          borderColor: 'rgb(255, 99, 132)',
+          backgroundColor: 'rgba(255, 99, 132, 0.3)',
+          tension: 0.4,
+          fill: false,
+          pointRadius: 0,
+          order: 1
+        },
+        {
+          label: 'Тестовая группа (бета prior)',
+          data: x.map((val, i) => ({ x: val * 100, y: yB[i] })),
+          borderColor: 'rgb(53, 162, 235)',
+          backgroundColor: 'rgba(53, 162, 235, 0.3)',
+          tension: 0.4,
+          fill: false,
+          pointRadius: 0,
+          order: 1
+        }
+      ]
+    };
+  }
+
+  const betaChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: {
+        display: true,
+        text: 'Бета-распределения для исходных данных (без учета апостериорных сэмплов)'
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear' as const,
+        title: { display: true, text: 'Конверсия, %' }
+      },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: 'Плотность' }
+      }
+    }
+  };
 
   return (
     <Container maxWidth="md">
@@ -373,6 +448,13 @@ function App() {
             {conversionChartData && (
               <Box sx={{ height: { xs: 300, sm: 400 }, mt: 2 }}>
                 <Line options={conversionChartOptions} data={conversionChartData} />
+              </Box>
+            )}
+
+            {/* График Beta-распределений для исходных данных */}
+            {betaChartData && (
+              <Box sx={{ height: { xs: 300, sm: 400 }, mt: 4 }}>
+                <Line options={betaChartOptions} data={betaChartData} />
               </Box>
             )}
 
