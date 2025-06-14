@@ -502,57 +502,6 @@ function App() {
             )}
 
             <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h5" gutterBottom align="center">
-                Калькулятор размера выборки (частотный A/B тест)
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
-                <TextField
-                  label="Средний показатель, %"
-                  type="number"
-                  value={sampleBaseline}
-                  onChange={e => setSampleBaseline(Number(e.target.value))}
-                  fullWidth
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  label="Ожидаемый прирост, %"
-                  type="number"
-                  value={sampleLift}
-                  onChange={e => setSampleLift(Number(e.target.value))}
-                  fullWidth
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  label="Достоверность, %"
-                  type="number"
-                  value={sampleAlpha}
-                  onChange={e => setSampleAlpha(Number(e.target.value))}
-                  fullWidth
-                  sx={{ flex: 1 }}
-                />
-                <TextField
-                  label="Мощность, %"
-                  type="number"
-                  value={samplePower}
-                  onChange={e => setSamplePower(Number(e.target.value))}
-                  fullWidth
-                  sx={{ flex: 1 }}
-                />
-              </Box>
-              <Box sx={{ textAlign: 'center', mb: 2 }}>
-                <Button variant="contained" onClick={calcSampleSize}>
-                  Рассчитать размер выборки
-                </Button>
-              </Box>
-              {sampleResult && (
-                <Typography align="center" sx={{ fontWeight: 'bold' }}>
-                  Необходимый размер выборки на группу: {sampleResult}<br/>
-                  Всего: {sampleResult * 2}
-                </Typography>
-              )}
-            </Paper>
-
-            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="h6" gutterBottom>
                   Что означают метрики?
