@@ -172,7 +172,7 @@ function App() {
     const allY = result.a_distribution.concat(result.b_distribution);
     const maxY = Math.max(...allY);
     const indices = result.x_values
-      .map((x, i) => (result.a_distribution[i] > threshold * maxY || result.b_distribution[i] > threshold * maxY) ? i : -1)
+      .map((_, i) => (result.a_distribution[i] > threshold * maxY || result.b_distribution[i] > threshold * maxY) ? i : -1)
       .filter(i => i !== -1);
     if (indices.length > 0) {
       // Добавим запас по краям
