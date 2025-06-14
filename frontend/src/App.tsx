@@ -67,7 +67,7 @@ function App() {
   const handleCalculate = async () => {
     try {
       setError('')
-      const response = await axios.post('http://localhost:8001/calculate', {
+      const response = await axios.post('https://abtest-calculator.onrender.com/calculate', {
         a_success: parseInt(controlSuccess),
         a_total: parseInt(controlTotal),
         b_success: parseInt(variantSuccess),
