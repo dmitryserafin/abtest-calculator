@@ -81,9 +81,9 @@ def calculate_abtest(data: ABTestInput):
     # Средние значения (Conversion Rate)
     a_mean = float(np.mean(a_samples))
     b_mean = float(np.mean(b_samples))
-    # Expected Loss (DY-style)
-    a_expected_loss = float(np.mean(np.maximum(b_samples - a_samples, 0)))
-    b_expected_loss = float(np.mean(np.maximum(a_samples - b_samples, 0)))
+    # Expected Loss (DY-style, относительный в процентах)
+    a_expected_loss = float(np.mean(np.where(b_samples > a_samples, (b_samples - a_samples) / b_samples, 0)))
+    b_expected_loss = float(np.mean(np.where(a_samples > b_samples, (a_samples - b_samples) / a_samples, 0)))
     # Распределение разности для графика
     diff_samples = b_samples - a_samples
     diff_x = np.linspace(np.min(diff_samples), np.max(diff_samples), 100)
