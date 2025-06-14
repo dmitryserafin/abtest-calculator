@@ -86,47 +86,43 @@ function App() {
     }
   }
 
-  const chartData = result ? {
+  // График: Распределение коэффициентов конверсии с учетом размера выборки
+  const conversionChartData = result ? {
     datasets: [
       {
         label: 'Контрольная группа',
         data: result.x_values.map((x, i) => ({ x: x * 100, y: result.a_distribution[i] })),
         borderColor: 'rgb(255, 99, 132)',
-        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+        backgroundColor: 'rgba(255, 99, 132, 0.3)',
         tension: 0.4,
-        fill: false,
+        fill: true,
         pointRadius: 0
       },
       {
         label: 'Тестовая группа',
         data: result.x_values.map((x, i) => ({ x: x * 100, y: result.b_distribution[i] })),
         borderColor: 'rgb(53, 162, 235)',
-        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        backgroundColor: 'rgba(53, 162, 235, 0.3)',
         tension: 0.4,
-        fill: false,
+        fill: true,
         pointRadius: 0
       }
     ]
   } : null
 
-  const chartOptions = {
+  const conversionChartOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: 'top' as const,
-      },
+      legend: { position: 'top' as const },
       title: {
         display: true,
-        text: 'Байесовские распределения конверсий',
+        text: 'Распределение коэффициентов конверсии с учетом размера выборки',
       },
     },
     scales: {
       x: {
         type: 'linear' as const,
-        title: {
-          display: true,
-          text: 'Конверсия, %'
-        },
+        title: { display: true, text: 'Конверсия, %' },
         min: 0,
         max: 5,
         ticks: {
@@ -137,70 +133,7 @@ function App() {
       },
       y: {
         beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Нормализованная плотность вероятности'
-        }
-      }
-    }
-  }
-
-  // График разности (Posterior simulation of difference)
-  const diffChartData = result ? {
-    labels: result.diff_x.map(x => (x * 100).toFixed(2) + '%'),
-    datasets: [
-      {
-        label: 'Разница (B - A)',
-        data: result.diff_distribution,
-        borderColor: 'rgba(53, 162, 235, 1)',
-        backgroundColor: 'rgba(53, 162, 235, 0.3)',
-        fill: true,
-        tension: 0.4
-      }
-    ]
-  } : null
-
-  const diffChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: false
-      },
-      title: {
-        display: true,
-        text: 'Posterior simulation of difference',
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            return `Плотность: ${(context.parsed.y * 100).toFixed(2)}%`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Плотность'
-        },
-        ticks: {
-          callback: function(tickValue: number | string) {
-            return `${(Number(tickValue) * 100).toFixed(1)}%`;
-          }
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Разница конверсий (B - A)'
-        },
-        ticks: {
-          callback: function(tickValue: number | string) {
-            return `${(Number(tickValue)).toFixed(2)}%`;
-          }
-        }
+        title: { display: true, text: 'Плотность' }
       }
     }
   }
@@ -370,14 +303,10 @@ function App() {
               </Typography>
             </Box>
 
-            <Box sx={{ height: 400 }}>
-              {chartData && <Line options={chartOptions} data={chartData} />}
-            </Box>
-
-            {/* График разности */}
-            {diffChartData && (
-              <Box sx={{ height: 400, mt: 4 }}>
-                <Line options={diffChartOptions} data={diffChartData} />
+            {/* График распределения коэффициентов конверсии */}
+            {conversionChartData && (
+              <Box sx={{ height: 400, mt: 2 }}>
+                <Line options={conversionChartOptions} data={conversionChartData} />
               </Box>
             )}
 
