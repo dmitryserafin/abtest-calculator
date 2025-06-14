@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from scipy.stats import norm, beta
 import numpy as np
 from scipy.stats import gaussian_kde
+import pymc as pm
 
 app = FastAPI()
 
@@ -56,18 +57,19 @@ def calculate_abtest(data: ABTestInput):
     p_value = 2 * (1 - norm.cdf(abs(z)))
     significant = p_value < 0.05
 
-    # Байесовский подход (Beta posterior) с учетом априорных значений
-    a_alpha = data.a_success + data.a_prior_alpha
-    a_beta = data.a_total - data.a_success + data.a_prior_beta
-    b_alpha = data.b_success + data.b_prior_alpha
-    b_beta = data.b_total - data.b_success + data.b_prior_beta
-    
-    # Генерируем точки для построения графика
+    # Байесовский подход через PyMC
+    with pm.Model() as model:
+        p_a = pm.Beta('p_a', alpha=data.a_prior_alpha, beta=data.a_prior_beta)
+        p_b = pm.Beta('p_b', alpha=data.b_prior_alpha, beta=data.b_prior_beta)
+        obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
+        obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
+        delta = pm.Deterministic('delta', p_b - p_a)
+        trace = pm.sample(2000, tune=1000, cores=1, random_seed=42, progressbar=False)
+
+    a_samples = trace['p_a']
+    b_samples = trace['p_b']
+    # Для графика: KDE по сэмплам
     x = np.linspace(0, 1, 100)
-    # Сэмплируем из beta-распределения
-    a_samples = np.random.beta(a_alpha, a_beta, 100_000)
-    b_samples = np.random.beta(b_alpha, b_beta, 100_000)
-    # KDE по сэмплам для гладких графиков
     a_kde = gaussian_kde(a_samples)
     b_kde = gaussian_kde(b_samples)
     a_dist = a_kde(x)
@@ -78,10 +80,8 @@ def calculate_abtest(data: ABTestInput):
     # Байесовские метрики
     prob_b_better = float(np.mean(b_samples > a_samples))
     prob_a_better = float(np.mean(a_samples > b_samples))
-    # Средние значения (Conversion Rate)
     a_mean = float(np.mean(a_samples))
     b_mean = float(np.mean(b_samples))
-    # Expected Loss (DY-style, относительный в процентах)
     a_expected_loss = float(np.mean(np.where(b_samples > a_samples, (b_samples - a_samples) / b_samples, 0)))
     b_expected_loss = float(np.mean(np.where(a_samples > b_samples, (a_samples - b_samples) / a_samples, 0)))
     # Распределение разности для графика
