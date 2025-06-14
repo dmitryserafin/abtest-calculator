@@ -144,7 +144,7 @@ function App() {
     datasets: [
       {
         label: 'Контрольная группа',
-        data: result.x_values.map((x, i) => ({ x: x * 100, y: result.a_distribution[i] })),
+        data: result.x_values.map((val, i) => ({ x: val * 100, y: result.a_distribution[i] })),
         borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.3)',
         tension: 0.4,
@@ -154,7 +154,7 @@ function App() {
       },
       {
         label: 'Тестовая группа',
-        data: result.x_values.map((x, i) => ({ x: x * 100, y: result.b_distribution[i] })),
+        data: result.x_values.map((val, i) => ({ x: val * 100, y: result.b_distribution[i] })),
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.3)',
         tension: 0.4,

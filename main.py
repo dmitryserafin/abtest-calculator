@@ -25,10 +25,6 @@ class ABTestInput(BaseModel):
     a_total: int
     b_success: int
     b_total: int
-    a_prior_alpha: int = 1
-    a_prior_beta: int = 1
-    b_prior_alpha: int = 1
-    b_prior_beta: int = 1
 
 class ABTestResult(BaseModel):
     freq_p_value: float
@@ -45,6 +41,9 @@ class ABTestResult(BaseModel):
     b_expected_loss: float
     diff_x: list[float]
     diff_distribution: list[float]
+    a_hist: list[float]
+    b_hist: list[float]
+    x_hist: list[float]
 
 @app.post("/calculate", response_model=ABTestResult)
 def calculate_abtest(data: ABTestInput):
@@ -57,19 +56,19 @@ def calculate_abtest(data: ABTestInput):
     p_value = 2 * (1 - norm.cdf(abs(z)))
     significant = p_value < 0.05
 
-    # Байесовский подход через PyMC
+    # Байесовский подход через PyMC с неинформативным prior (alpha=1, beta=1)
     with pm.Model() as model:
-        p_a = pm.Beta('p_a', alpha=data.a_prior_alpha, beta=data.a_prior_beta)
-        p_b = pm.Beta('p_b', alpha=data.b_prior_alpha, beta=data.b_prior_beta)
+        p_a = pm.Beta('p_a', alpha=1, beta=1)
+        p_b = pm.Beta('p_b', alpha=1, beta=1)
         obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
         obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
         delta = pm.Deterministic('delta', p_b - p_a)
-        trace = pm.sample(2000, tune=1000, cores=1, random_seed=42, progressbar=False)
+        trace = pm.sample(2000, tune=1000, cores=1, random_seed=42, progressbar=False, return_inferencedata=False)
 
     a_samples = trace['p_a']
     b_samples = trace['p_b']
     # Для графика: KDE по сэмплам
-    x = np.linspace(0, 1, 100)
+    x = np.linspace(0, 1, 300)
     a_kde = gaussian_kde(a_samples)
     b_kde = gaussian_kde(b_samples)
     a_dist = a_kde(x)
@@ -91,6 +90,12 @@ def calculate_abtest(data: ABTestInput):
     diff_distribution = kde(diff_x)
     diff_distribution = diff_distribution / np.max(diff_distribution)
 
+    # Для гистограммы: считаем частоты по бинам
+    bins = 300
+    a_hist, bin_edges = np.histogram(a_samples, bins=bins, range=(0, 1), density=True)
+    b_hist, _ = np.histogram(b_samples, bins=bins, range=(0, 1), density=True)
+    x_hist = 0.5 * (bin_edges[:-1] + bin_edges[1:])  # центры бинов
+
     return ABTestResult(
         freq_p_value=round(p_value, 6),
         freq_significant=significant,
@@ -105,5 +110,9 @@ def calculate_abtest(data: ABTestInput):
         a_expected_loss=round(a_expected_loss, 6),
         b_expected_loss=round(b_expected_loss, 6),
         diff_x=diff_x.tolist(),
-        diff_distribution=diff_distribution.tolist()
+        diff_distribution=diff_distribution.tolist(),
+        # Новые поля для гистограммы
+        a_hist=a_hist.tolist(),
+        b_hist=b_hist.tolist(),
+        x_hist=x_hist.tolist()
     )
