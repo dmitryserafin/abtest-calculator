@@ -219,30 +219,30 @@ function App() {
   }
 
   // График: Распределение коэффициентов конверсии с учетом размера выборки (KDE)
-  // const conversionChartData = result ? {
-  //   datasets: [
-  //     {
-  //       label: 'Контрольная группа',
-  //       data: result.x_values.map((val, i) => ({ x: val * 100, y: result.a_distribution[i] })),
-  //       borderColor: 'rgb(255, 99, 132)',
-  //       backgroundColor: 'rgba(255, 99, 132, 0.3)',
-  //       tension: 0.4,
-  //       fill: false,
-  //       pointRadius: 0,
-  //       order: 1
-  //     },
-  //     {
-  //       label: 'Тестовая группа',
-  //       data: result.x_values.map((val, i) => ({ x: val * 100, y: result.b_distribution[i] })),
-  //       borderColor: 'rgb(53, 162, 235)',
-  //       backgroundColor: 'rgba(53, 162, 235, 0.3)',
-  //       tension: 0.4,
-  //       fill: false,
-  //       pointRadius: 0,
-  //       order: 1
-  //     }
-  //   ]
-  // } : null;
+  const conversionChartData = result ? {
+    datasets: [
+      {
+        label: 'Контрольная группа',
+        data: result.x_values.map((val, i) => ({ x: val * 100, y: result.a_distribution[i] })),
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.3)',
+        tension: 0.4,
+        fill: false,
+        pointRadius: 0,
+        order: 1
+      },
+      {
+        label: 'Тестовая группа',
+        data: result.x_values.map((val, i) => ({ x: val * 100, y: result.b_distribution[i] })),
+        borderColor: 'rgb(53, 162, 235)',
+        backgroundColor: 'rgba(53, 162, 235, 0.3)',
+        tension: 0.4,
+        fill: false,
+        pointRadius: 0,
+        order: 1
+      }
+    ]
+  } : null;
 
   // Показываем оба "колокола" полностью (от роста до спада)
   let xMin = 0, xMax = 100;
@@ -260,38 +260,37 @@ function App() {
     }
   }
 
-  // const conversionChartOptions = {
-  //   responsive: true,
-  //   plugins: {
-  //     legend: { position: 'top' as const },
-  //     title: {
-  //       display: true,
-  //       text: 'Распределение коэффициентов конверсии с учетом размера выборки',
-  //     },
-  //     tooltip: {
-  //       mode: 'index' as const,
-  //       intersect: false
-  //     }
-  //   },
-  //   scales: {
-  //     x: {
-  //       type: 'linear' as const,
-  //       title: { display: true, text: 'Конверсия, %' },
-  //       min: xMin,
-  //       max: xMax,
-  //       ticks: {
-  //         callback: function(tickValue: number | string) {
-  //           return `${Number(tickValue).toFixed(2)}%`;
-  //         }
-  //       }
-  //     },
-  //     y: {
-  //       beginAtZero: true,
-  //       title: { display: true, text: 'Плотность' }
-  //     }
-  //   }
-  // }
-  // не используются вроде бы
+  const conversionChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: {
+        display: true,
+        text: 'Распределение коэффициентов конверсии с учетом размера выборки',
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear' as const,
+        title: { display: true, text: 'Конверсия, %' },
+        min: xMin,
+        max: xMax,
+        ticks: {
+          callback: function(tickValue: number | string) {
+            return `${Number(tickValue).toFixed(2)}%`;
+          }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: 'Плотность' }
+      }
+    }
+  }
 
   // --- График Beta-распределений для исходных данных ---
   let betaChartData = null;
