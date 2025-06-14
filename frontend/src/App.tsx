@@ -444,13 +444,6 @@ function App() {
               </Typography>
             </Box>
 
-            {/* График распределения коэффициентов конверсии */}
-            {conversionChartData && (
-              <Box sx={{ height: { xs: 300, sm: 400 }, mt: 2 }}>
-                <Line options={conversionChartOptions} data={conversionChartData} />
-              </Box>
-            )}
-
             {/* График Beta-распределений для исходных данных */}
             {betaChartData && (
               <Box sx={{ height: { xs: 300, sm: 400 }, mt: 4 }}>
