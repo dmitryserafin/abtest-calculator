@@ -89,7 +89,11 @@ function App() {
       })
       setResult(response.data)
     } catch (err) {
-      setError('Ошибка при расчете. Проверьте введенные данные.')
+      if (axios.isAxiosError(err) && err.response?.data?.detail) {
+        setError(err.response.data.detail)
+      } else {
+        setError('Ошибка при расчете. Проверьте введенные данные.')
+      }
       console.error(err)
     } finally {
       setIsLoading(false)
@@ -239,18 +243,18 @@ function App() {
               </Typography>
               <TextField
                 fullWidth
-                label="Количество успехов"
-                type="number"
-                value={controlSuccess}
-                onChange={(e) => setControlSuccess(e.target.value)}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
                 label="Общее количество"
                 type="number"
                 value={controlTotal}
                 onChange={(e) => setControlTotal(e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Количество успехов"
+                type="number"
+                value={controlSuccess}
+                onChange={(e) => setControlSuccess(e.target.value)}
                 margin="normal"
               />
             </Box>
@@ -261,18 +265,18 @@ function App() {
               </Typography>
               <TextField
                 fullWidth
-                label="Количество успехов"
-                type="number"
-                value={variantSuccess}
-                onChange={(e) => setVariantSuccess(e.target.value)}
-                margin="normal"
-              />
-              <TextField
-                fullWidth
                 label="Общее количество"
                 type="number"
                 value={variantTotal}
                 onChange={(e) => setVariantTotal(e.target.value)}
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Количество успехов"
+                type="number"
+                value={variantSuccess}
+                onChange={(e) => setVariantSuccess(e.target.value)}
                 margin="normal"
               />
             </Box>
