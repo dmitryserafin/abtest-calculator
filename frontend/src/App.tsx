@@ -50,6 +50,8 @@ interface ABTestResult {
   b_mean: number
   b_prob_best: number
   b_expected_loss: number
+  diff_x: number[]
+  diff_distribution: number[]
 }
 
 function App() {
@@ -131,6 +133,66 @@ function App() {
         ticks: {
           callback: function(tickValue: number | string) {
             return `${(Number(tickValue) * 100).toFixed(1)}%`
+          }
+        }
+      }
+    }
+  }
+
+  // График разности (Posterior simulation of difference)
+  const diffChartData = result ? {
+    labels: result.diff_x.map(x => (x * 100).toFixed(2) + '%'),
+    datasets: [
+      {
+        label: 'Разница (B - A)',
+        data: result.diff_distribution,
+        borderColor: 'rgba(53, 162, 235, 1)',
+        backgroundColor: 'rgba(53, 162, 235, 0.3)',
+        fill: true,
+        tension: 0.4
+      }
+    ]
+  } : null
+
+  const diffChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false
+      },
+      title: {
+        display: true,
+        text: 'Posterior simulation of difference',
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `Плотность: ${(context.parsed.y * 100).toFixed(2)}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Плотность'
+        },
+        ticks: {
+          callback: function(tickValue: number | string) {
+            return `${(Number(tickValue) * 100).toFixed(1)}%`;
+          }
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Разница конверсий (B - A)'
+        },
+        ticks: {
+          callback: function(tickValue: number | string) {
+            return `${(Number(tickValue)).toFixed(2)}%`;
           }
         }
       }
@@ -305,6 +367,13 @@ function App() {
             <Box sx={{ height: 400 }}>
               {chartData && <Line options={chartOptions} data={chartData} />}
             </Box>
+
+            {/* График разности */}
+            {diffChartData && (
+              <Box sx={{ height: 400, mt: 4 }}>
+                <Line options={diffChartOptions} data={diffChartData} />
+              </Box>
+            )}
 
             {/* Таблица с метриками */}
             <Box sx={{ mt: 4 }}>

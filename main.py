@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from scipy.stats import norm, beta
 import numpy as np
+from scipy.stats import gaussian_kde
 
 app = FastAPI()
 
@@ -41,6 +42,8 @@ class ABTestResult(BaseModel):
     b_prob_best: float
     a_expected_loss: float
     b_expected_loss: float
+    diff_x: list[float]
+    diff_distribution: list[float]
 
 @app.post("/calculate", response_model=ABTestResult)
 def calculate_abtest(data: ABTestInput):
@@ -77,11 +80,15 @@ def calculate_abtest(data: ABTestInput):
     # Средние значения (Conversion Rate)
     a_mean = float(np.mean(a_samples))
     b_mean = float(np.mean(b_samples))
-    # Expected Loss (нормируем на вероятность проигрыша, как в DY)
-    a_loss_mask = b_samples > a_samples
-    b_loss_mask = a_samples > b_samples
-    a_expected_loss = float(np.mean((b_samples - a_samples)[a_loss_mask]) if np.any(a_loss_mask) else 0)
-    b_expected_loss = float(np.mean((a_samples - b_samples)[b_loss_mask]) if np.any(b_loss_mask) else 0)
+    # Expected Loss (DY-style)
+    a_expected_loss = float(np.mean(np.maximum(b_samples - a_samples, 0)))
+    b_expected_loss = float(np.mean(np.maximum(a_samples - b_samples, 0)))
+    # Распределение разности для графика
+    diff_samples = b_samples - a_samples
+    diff_x = np.linspace(np.min(diff_samples), np.max(diff_samples), 100)
+    kde = gaussian_kde(diff_samples)
+    diff_distribution = kde(diff_x)
+    diff_distribution = diff_distribution / np.max(diff_distribution)
 
     return ABTestResult(
         freq_p_value=round(p_value, 6),
@@ -95,5 +102,7 @@ def calculate_abtest(data: ABTestInput):
         a_prob_best=round(prob_a_better, 4),
         b_prob_best=round(prob_b_better, 4),
         a_expected_loss=round(a_expected_loss, 6),
-        b_expected_loss=round(b_expected_loss, 6)
+        b_expected_loss=round(b_expected_loss, 6),
+        diff_x=diff_x.tolist(),
+        diff_distribution=diff_distribution.tolist()
     )
