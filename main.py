@@ -85,7 +85,7 @@ def calculate_abtest(data: ABTestInput):
         obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
         obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
         delta = pm.Deterministic('delta', p_b - p_a)
-        trace = pm.sample(2000, tune=1000, cores=1, random_seed=42, progressbar=False, return_inferencedata=False)
+        trace = pm.sample(2000, tune=1000, cores=1, random_seed=42, progressbar=True, return_inferencedata=False)
 
     a_samples = trace['p_a']
     b_samples = trace['p_b']
