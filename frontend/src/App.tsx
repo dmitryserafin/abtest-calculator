@@ -65,7 +65,7 @@ interface ABTestResult {
 const theme = createTheme({
   palette: {
     background: {
-      default: '#f5f6fa',
+      default: '#f5f6fa', // светло-серый фон
       paper: '#fff',
     },
     primary: {
@@ -186,6 +186,7 @@ function App() {
 
   // Обратная функция стандартного нормального распределения (approx)
   function normSInv(p: number) {
+    // Abramowitz and Stegun formula 26.2.23
     if (p <= 0 || p >= 1) throw new Error('p must be in (0,1)')
     const a1 = -39.6968302866538, a2 = 220.946098424521, a3 = -275.928510446969
     const a4 = 138.357751867269, a5 = -30.6647980661472, a6 = 2.50662827745924
@@ -215,6 +216,80 @@ function App() {
         ((((d1 * q + d2) * q + d3) * q + d4) * q + 1)
     }
     return ret
+  }
+
+  // График: Распределение коэффициентов конверсии с учетом размера выборки (KDE)
+  const conversionChartData = result ? {
+    datasets: [
+      {
+        label: 'Контрольная группа',
+        data: result.x_values.map((val, i) => ({ x: val * 100, y: result.a_distribution[i] })),
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: 'rgba(255, 99, 132, 0.3)',
+        tension: 0.4,
+        fill: false,
+        pointRadius: 0,
+        order: 1
+      },
+      {
+        label: 'Тестовая группа',
+        data: result.x_values.map((val, i) => ({ x: val * 100, y: result.b_distribution[i] })),
+        borderColor: 'rgb(53, 162, 235)',
+        backgroundColor: 'rgba(53, 162, 235, 0.3)',
+        tension: 0.4,
+        fill: false,
+        pointRadius: 0,
+        order: 1
+      }
+    ]
+  } : null;
+
+  // Показываем оба "колокола" полностью (от роста до спада)
+  let xMin = 0, xMax = 100;
+  if (result) {
+    const threshold = 0.01; // 1% от максимума любого распределения
+    const allY = result.a_distribution.concat(result.b_distribution);
+    const maxY = Math.max(...allY);
+    const indices = result.x_values
+      .map((_, i) => (result.a_distribution[i] > threshold * maxY || result.b_distribution[i] > threshold * maxY) ? i : -1)
+      .filter(i => i !== -1);
+    if (indices.length > 0) {
+      // Добавим запас по краям
+      xMin = Math.max(0, result.x_values[indices[0]] * 100 - 1);
+      xMax = Math.min(100, result.x_values[indices[indices.length - 1]] * 100 + 1);
+    }
+  }
+
+  const conversionChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top' as const },
+      title: {
+        display: true,
+        text: 'Распределение коэффициентов конверсии с учетом размера выборки',
+      },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false
+      }
+    },
+    scales: {
+      x: {
+        type: 'linear' as const,
+        title: { display: true, text: 'Конверсия, %' },
+        min: xMin,
+        max: xMax,
+        ticks: {
+          callback: function(tickValue: number | string) {
+            return `${Number(tickValue).toFixed(2)}%`;
+          }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        title: { display: true, text: 'Плотность' }
+      }
+    }
   }
 
   // --- График Beta-распределений для исходных данных ---
@@ -590,6 +665,52 @@ function App() {
               </Typography>
             </Box>
           </Box>
+        </Container>
+        <Container maxWidth="md">
+          <Paper elevation={3} sx={{ p: 3, mt: 8, mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              Калькулятор размера выборки (частотный A/B тест)
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
+              <TextField
+                label="Базовая конверсия, %"
+                type="number"
+                value={sampleBaseline}
+                onChange={e => setSampleBaseline(Number(e.target.value))}
+                fullWidth
+              />
+              <TextField
+                label="Ожидаемый lift, %"
+                type="number"
+                value={sampleLift}
+                onChange={e => setSampleLift(Number(e.target.value))}
+                fullWidth
+              />
+              <TextField
+                label="Significance, %"
+                type="number"
+                value={sampleAlpha}
+                onChange={e => setSampleAlpha(Number(e.target.value))}
+                fullWidth
+              />
+              <TextField
+                label="Power, %"
+                type="number"
+                value={samplePower}
+                onChange={e => setSamplePower(Number(e.target.value))}
+                fullWidth
+              />
+            </Box>
+            <Button variant="outlined" onClick={calcSampleSize} sx={{ mb: 2 }}>
+              Рассчитать размер выборки
+            </Button>
+            {sampleResult && (
+              <Typography variant="body2">
+                Необходимый размер выборки на группу: <b>{sampleResult}</b><br/>
+                Всего: <b>{sampleResult * 2}</b>
+              </Typography>
+            )}
+          </Paper>
         </Container>
       </Box>
     </ThemeProvider>
