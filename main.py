@@ -14,7 +14,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "https://abtest-calculator.vercel.app",
-        "https://abtest-calculator-frontend.vercel.app"
+        "https://abtest-calculator.onrender.com"
     ],  # Разрешаем запросы с фронтенда
     allow_credentials=True,
     allow_methods=["*"],
