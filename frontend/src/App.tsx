@@ -24,6 +24,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  BarElement
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 
@@ -34,7 +35,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  BarElement
 )
 
 interface ABTestResult {
@@ -52,6 +54,9 @@ interface ABTestResult {
   b_expected_loss: number
   diff_x: number[]
   diff_distribution: number[]
+  x_hist?: number[]
+  a_hist?: number[]
+  b_hist?: number[]
 }
 
 function App() {
@@ -61,23 +66,22 @@ function App() {
   const [variantTotal, setVariantTotal] = useState('')
   const [result, setResult] = useState<ABTestResult | null>(null)
   const [error, setError] = useState('')
-  const [aPriorAlpha, setAPriorAlpha] = useState('1')
-  const [aPriorBeta, setAPriorBeta] = useState('1')
-  const [bPriorAlpha, setBPriorAlpha] = useState('1')
-  const [bPriorBeta, setBPriorBeta] = useState('1')
+
+  // --- Калькулятор размера выборки ---
+  const [sampleBaseline, setSampleBaseline] = useState(20)
+  const [sampleLift, setSampleLift] = useState(3)
+  const [sampleAlpha, setSampleAlpha] = useState(95)
+  const [samplePower, setSamplePower] = useState(80)
+  const [sampleResult, setSampleResult] = useState<number|null>(null)
 
   const handleCalculate = async () => {
     try {
       setError('')
-      const response = await axios.post('https://abtest-calculator.onrender.com/calculate', {
+      const response = await axios.post('https://abtest-calculator-backend.onrender.com/calculate', {
         a_success: parseInt(controlSuccess),
         a_total: parseInt(controlTotal),
         b_success: parseInt(variantSuccess),
-        b_total: parseInt(variantTotal),
-        a_prior_alpha: parseInt(aPriorAlpha),
-        a_prior_beta: parseInt(aPriorBeta),
-        b_prior_alpha: parseInt(bPriorAlpha),
-        b_prior_beta: parseInt(bPriorBeta)
+        b_total: parseInt(variantTotal)
       })
       setResult(response.data)
     } catch (err) {
@@ -86,7 +90,56 @@ function App() {
     }
   }
 
-  // График: Распределение коэффициентов конверсии с учетом размера выборки
+  // Формула для двух пропорций (частотный подход)
+  function calcSampleSize() {
+    const alpha = 1 - sampleAlpha / 100
+    const power = samplePower / 100
+    const p1 = sampleBaseline / 100
+    const p2 = (sampleBaseline + sampleLift) / 100
+    const z_alpha = normSInv(1 - alpha / 2)
+    const z_beta = normSInv(power)
+    const pooled = (p1 + p2) / 2
+    const q1 = 1 - p1
+    const q2 = 1 - p2
+    const n = ((z_alpha * Math.sqrt(2 * pooled * (1 - pooled)) + z_beta * Math.sqrt(p1 * q1 + p2 * q2)) ** 2) / ((p2 - p1) ** 2)
+    setSampleResult(Math.ceil(n))
+  }
+
+  // Обратная функция стандартного нормального распределения (approx)
+  function normSInv(p: number) {
+    // Abramowitz and Stegun formula 26.2.23
+    if (p <= 0 || p >= 1) throw new Error('p must be in (0,1)')
+    const a1 = -39.6968302866538, a2 = 220.946098424521, a3 = -275.928510446969
+    const a4 = 138.357751867269, a5 = -30.6647980661472, a6 = 2.50662827745924
+    const b1 = -54.4760987982241, b2 = 161.585836858041, b3 = -155.698979859887
+    const b4 = 66.8013118877197, b5 = -13.2806815528857
+    const c1 = -0.00778489400243029, c2 = -0.322396458041136
+    const c3 = -2.40075827716184, c4 = -2.54973253934373
+    const c5 = 4.37466414146497, c6 = 2.93816398269878
+    const d1 = 0.00778469570904146, d2 = 0.32246712907004
+    const d3 = 2.445134137143, d4 = 3.75440866190742
+    const p_low = 0.02425
+    const p_high = 1 - p_low
+    let q, r;
+    let ret = 0;
+    if (p < p_low) {
+      q = Math.sqrt(-2 * Math.log(p))
+      ret = (((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+        ((((d1 * q + d2) * q + d3) * q + d4) * q + 1)
+    } else if (p <= p_high) {
+      q = p - 0.5
+      r = q * q
+      ret = (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q /
+        (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1)
+    } else {
+      q = Math.sqrt(-2 * Math.log(1 - p))
+      ret = -(((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+        ((((d1 * q + d2) * q + d3) * q + d4) * q + 1)
+    }
+    return ret
+  }
+
+  // График: Распределение коэффициентов конверсии с учетом размера выборки (KDE)
   const conversionChartData = result ? {
     datasets: [
       {
@@ -95,8 +148,9 @@ function App() {
         borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.3)',
         tension: 0.4,
-        fill: true,
-        pointRadius: 0
+        fill: false,
+        pointRadius: 0,
+        order: 1
       },
       {
         label: 'Тестовая группа',
@@ -104,11 +158,28 @@ function App() {
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.3)',
         tension: 0.4,
-        fill: true,
-        pointRadius: 0
+        fill: false,
+        pointRadius: 0,
+        order: 1
       }
     ]
-  } : null
+  } : null;
+
+  // Показываем оба "колокола" полностью (от роста до спада)
+  let xMin = 0, xMax = 100;
+  if (result) {
+    const threshold = 0.01; // 1% от максимума любого распределения
+    const allY = result.a_distribution.concat(result.b_distribution);
+    const maxY = Math.max(...allY);
+    const indices = result.x_values
+      .map((x, i) => (result.a_distribution[i] > threshold * maxY || result.b_distribution[i] > threshold * maxY) ? i : -1)
+      .filter(i => i !== -1);
+    if (indices.length > 0) {
+      // Добавим запас по краям
+      xMin = Math.max(0, result.x_values[indices[0]] * 100 - 1);
+      xMax = Math.min(100, result.x_values[indices[indices.length - 1]] * 100 + 1);
+    }
+  }
 
   const conversionChartOptions = {
     responsive: true,
@@ -118,13 +189,17 @@ function App() {
         display: true,
         text: 'Распределение коэффициентов конверсии с учетом размера выборки',
       },
+      tooltip: {
+        mode: 'index' as const,
+        intersect: false
+      }
     },
     scales: {
       x: {
         type: 'linear' as const,
         title: { display: true, text: 'Конверсия, %' },
-        min: 0,
-        max: 5,
+        min: xMin,
+        max: xMax,
         ticks: {
           callback: function(tickValue: number | string) {
             return `${Number(tickValue).toFixed(2)}%`;
@@ -172,22 +247,6 @@ function App() {
                 onChange={(e) => setControlTotal(e.target.value)}
                 margin="normal"
               />
-              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                <TextField
-                  label="Априорное α"
-                  type="number"
-                  value={aPriorAlpha}
-                  onChange={(e) => setAPriorAlpha(e.target.value)}
-                  size="small"
-                />
-                <TextField
-                  label="Априорное β"
-                  type="number"
-                  value={aPriorBeta}
-                  onChange={(e) => setAPriorBeta(e.target.value)}
-                  size="small"
-                />
-              </Box>
             </Box>
             
             <Box sx={{ flex: 1 }}>
@@ -210,22 +269,6 @@ function App() {
                 onChange={(e) => setVariantTotal(e.target.value)}
                 margin="normal"
               />
-              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                <TextField
-                  label="Априорное α"
-                  type="number"
-                  value={bPriorAlpha}
-                  onChange={(e) => setBPriorAlpha(e.target.value)}
-                  size="small"
-                />
-                <TextField
-                  label="Априорное β"
-                  type="number"
-                  value={bPriorBeta}
-                  onChange={(e) => setBPriorBeta(e.target.value)}
-                  size="small"
-                />
-              </Box>
             </Box>
           </Box>
 
@@ -305,7 +348,7 @@ function App() {
 
             {/* График распределения коэффициентов конверсии */}
             {conversionChartData && (
-              <Box sx={{ height: 400, mt: 2 }}>
+              <Box sx={{ height: { xs: 300, sm: 400 }, mt: 2 }}>
                 <Line options={conversionChartOptions} data={conversionChartData} />
               </Box>
             )}
@@ -344,6 +387,57 @@ function App() {
             </Box>
           </Paper>
         )}
+
+        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h5" gutterBottom align="center">
+            Калькулятор размера выборки (частотный A/B тест)
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
+            <TextField
+              label="Средний показатель, %"
+              type="number"
+              value={sampleBaseline}
+              onChange={e => setSampleBaseline(Number(e.target.value))}
+              fullWidth
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="Ожидаемый прирост, %"
+              type="number"
+              value={sampleLift}
+              onChange={e => setSampleLift(Number(e.target.value))}
+              fullWidth
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="Достоверность, %"
+              type="number"
+              value={sampleAlpha}
+              onChange={e => setSampleAlpha(Number(e.target.value))}
+              fullWidth
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="Мощность, %"
+              type="number"
+              value={samplePower}
+              onChange={e => setSamplePower(Number(e.target.value))}
+              fullWidth
+              sx={{ flex: 1 }}
+            />
+          </Box>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Button variant="contained" onClick={calcSampleSize}>
+              Рассчитать размер выборки
+            </Button>
+          </Box>
+          {sampleResult && (
+            <Typography align="center" sx={{ fontWeight: 'bold' }}>
+              Необходимый размер выборки на группу: {sampleResult}<br/>
+              Всего: {sampleResult * 2}
+            </Typography>
+          )}
+        </Paper>
       </Box>
     </Container>
   )
