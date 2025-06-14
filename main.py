@@ -64,17 +64,18 @@ def calculate_abtest(data: ABTestInput):
     
     # Генерируем точки для построения графика
     x = np.linspace(0, 1, 100)
-    a_dist = beta.pdf(x, a_alpha, a_beta)
-    b_dist = beta.pdf(x, b_alpha, b_beta)
-    
-    # Нормализуем распределения для лучшей визуализации
+    # Сэмплируем из beta-распределения
+    a_samples = np.random.beta(a_alpha, a_beta, 100_000)
+    b_samples = np.random.beta(b_alpha, b_beta, 100_000)
+    # KDE по сэмплам для гладких графиков
+    a_kde = gaussian_kde(a_samples)
+    b_kde = gaussian_kde(b_samples)
+    a_dist = a_kde(x)
+    b_dist = b_kde(x)
     a_dist = a_dist / np.max(a_dist)
     b_dist = b_dist / np.max(b_dist)
 
     # Байесовские метрики
-    samples = 100_000
-    a_samples = np.random.beta(a_alpha, a_beta, samples)
-    b_samples = np.random.beta(b_alpha, b_beta, samples)
     prob_b_better = float(np.mean(b_samples > a_samples))
     prob_a_better = float(np.mean(a_samples > b_samples))
     # Средние значения (Conversion Rate)
