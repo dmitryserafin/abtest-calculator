@@ -9,7 +9,10 @@ app = FastAPI()
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Разрешаем запросы с фронтенда
+    allow_origins=[
+        "http://localhost:5173",
+        "https://abtest-calculator.vercel.app"
+    ],  # Разрешаем запросы с фронтенда
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
