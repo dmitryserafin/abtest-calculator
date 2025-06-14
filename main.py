@@ -13,7 +13,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://abtest-calculator.vercel.app"
+        "https://abtest-calculator.vercel.app",
+        "https://abtest-calculator-frontend.vercel.app"
     ],  # Разрешаем запросы с фронтенда
     allow_credentials=True,
     allow_methods=["*"],
