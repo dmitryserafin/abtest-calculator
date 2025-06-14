@@ -5,6 +5,7 @@ from scipy.stats import norm, beta
 import numpy as np
 from scipy.stats import gaussian_kde
 import pymc as pm
+from fastapi import HTTPException
 
 app = FastAPI()
 
@@ -54,11 +55,11 @@ class ABTestResult(BaseModel):
 def calculate_abtest(data: ABTestInput):
     # Проверка входных данных
     if data.a_total <= 0 or data.b_total <= 0:
-        raise ValueError("Total values must be positive")
+        raise HTTPException(status_code=400, detail="Общее количество должно быть положительным числом")
     if data.a_success < 0 or data.b_success < 0:
-        raise ValueError("Success values cannot be negative")
+        raise HTTPException(status_code=400, detail="Количество успехов не может быть отрицательным")
     if data.a_success > data.a_total or data.b_success > data.b_total:
-        raise ValueError("Success values cannot be greater than total values")
+        raise HTTPException(status_code=400, detail="Количество успехов не может быть больше общего количества")
 
     # Частотный подход (z-тест для пропорций)
     p1 = data.a_success / data.a_total
