@@ -321,11 +321,6 @@ function App() {
             </Paper>
 
             <Paper elevation={3} sx={{ p: { xs: 2, sm: 4 }, mb: 4 }}>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  <b>Априорные значения (α и β):</b> задают вашу изначальную уверенность в конверсии до эксперимента. Обычно используют значения 1 и 1 (нейтральный неинформативный приоритет). Если у вас есть исторические данные или экспертные ожидания, вы можете их отразить, увеличив α и β. Например, α=10, β=90 означает, что до эксперимента вы ожидали 10 успехов и 90 неудач.
-                </Typography>
-              </Box>
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4 }}>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="h6" gutterBottom>
