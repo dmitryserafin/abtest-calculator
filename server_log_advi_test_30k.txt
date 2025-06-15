@@ -1,0 +1,14 @@
+INFO:     Started server process [10846]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Fitting: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 Average Loss = 13.833
+Finished [100%]: Average Loss = 13.834
+PyMC ADVI fit time: 6.1986 seconds
+ADVI approx.sample time: 0.1394 seconds
+Total function execution time (ADVI): 6.3658 seconds
+INFO:     127.0.0.1:54458 - "POST /calculate HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [10846]
