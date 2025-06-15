@@ -84,10 +84,12 @@ def calculate_abtest(data: ABTestInput):
         obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
         obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
         delta = pm.Deterministic('delta', p_b - p_a)
-        trace = pm.sample(500, tune=250, cores=None, random_seed=42, progressbar=True, return_inferencedata=False)
 
-    a_samples = trace['p_a']
-    b_samples = trace['p_b']
+        approx = pm.fit(method='advi', n=30000, random_seed=42, progressbar=True)
+        trace = approx.sample(draws=1000, random_seed=42)
+
+    a_samples = trace.posterior['p_a'].values.flatten()
+    b_samples = trace.posterior['p_b'].values.flatten()
     # Для графика: KDE по сэмплам
     x = np.linspace(0, 1, 300)
     a_kde = gaussian_kde(a_samples)
