@@ -13,7 +13,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress
+  CircularProgress,
+  Link
 } from '@mui/material'
 import axios from 'axios'
 import {
@@ -41,6 +42,19 @@ ChartJS.register(
   Legend,
   BarElement
 )
+
+const GitHubIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 16 16"
+    width="24" // Установить подходящий размер, например 24x24
+    height="24"
+    fill="currentColor" // Будет наследовать цвет от родительского текстового элемента
+    {...props} // Позволяет передавать другие SVG атрибуты, если нужно
+  >
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+  </svg>
+);
 
 interface ABTestResult {
   freq_p_value: number
@@ -585,7 +599,44 @@ function App() {
             )}
           </Paper>
         </Container>
-      </Box>
+
+        <Box
+          component="footer"
+          sx={{
+            py: 3,
+            px: 2,
+            // mt: 'auto', // Removed for simplicity for now
+            backgroundColor: (theme) => theme.palette.mode === 'light' ? theme.palette.grey[200] : theme.palette.grey[800],
+            textAlign: 'center',
+            borderTop: '1px solid',
+            borderColor: (theme) => theme.palette.divider
+          }}
+        >
+          <Container maxWidth="md">
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                © {new Date().getFullYear()} Dmitry Serafin. All rights reserved.
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GitHubIcon sx={{ fontSize: '1.2rem' }} />
+                <Link href="https://github.com/dmitryserafin/abtest-calculator" target="_blank" rel="noopener noreferrer" variant="body2">
+                  GitHub Repository
+                </Link>
+              </Box>
+
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                This site was vibe-coded with Google Jules & Cursor.
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                Contact: @dmitryserafin
+              </Typography>
+            </Box>
+          </Container>
+        </Box>
+
+      </Box> {/* Закрытие корневого Box */}
     </ThemeProvider>
   )
 }
