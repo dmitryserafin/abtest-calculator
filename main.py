@@ -73,6 +73,9 @@ def calculate_abtest(data: ABTestInput):
     z = (p2 - p1) / se if se > 0 else 0
     p_value = 2 * (1 - norm.cdf(abs(z)))
     significant = p_value < 0.05
+    # freq_end_time = time.time() # Not specifically requested for this run, but can be added
+    # print(f"Frequentist calculation time: {freq_end_time - freq_start_time:.4f} seconds")
+
 
     # Байесовский подход через PyMC с неинформативным prior (alpha=1, beta=1)
     with pm.Model() as model:
@@ -81,7 +84,7 @@ def calculate_abtest(data: ABTestInput):
         obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
         obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
         delta = pm.Deterministic('delta', p_b - p_a)
-        trace = pm.sample(2000, tune=1000, cores=None, random_seed=42, progressbar=True, return_inferencedata=False)
+        trace = pm.sample(500, tune=250, cores=None, random_seed=42, progressbar=True, return_inferencedata=False)
 
     a_samples = trace['p_a']
     b_samples = trace['p_b']
