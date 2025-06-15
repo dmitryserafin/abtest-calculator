@@ -101,7 +101,7 @@ def calculate_abtest(data: ABTestInput):
     # Заметка: переменные a_samples и b_samples будут созданы на следующем шаге плана.
     # На этом шаге мы только вычисляем alpha_a_posterior, beta_a_posterior, alpha_b_posterior, beta_b_posterior.
 
-    N_SAMPLES_METRICS = 1000000
+    N_SAMPLES_METRICS = 5000000
     N_SAMPLES_PLOTS = 50000
 
     sampling_metrics_start_time = time.time()
