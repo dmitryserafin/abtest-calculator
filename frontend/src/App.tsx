@@ -619,7 +619,7 @@ function App() {
               </Typography>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <GitHubIcon sx={{ fontSize: '1.2rem' }} />
+                <GitHubIcon />
                 <Link href="https://github.com/dmitryserafin/abtest-calculator" target="_blank" rel="noopener noreferrer" variant="body2">
                   GitHub Repository
                 </Link>
