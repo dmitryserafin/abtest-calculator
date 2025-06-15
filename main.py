@@ -8,6 +8,8 @@ import pymc as pm
 from fastapi import HTTPException
 import time
 
+app = FastAPI()
+
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
