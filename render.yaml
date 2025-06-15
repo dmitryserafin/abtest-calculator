@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: abtest-backend # Users should verify/change this to their actual service name on Render if needed
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+    nativeEnvironment:
+      systemPackages:
+        - build-essential
+    plan: free # Assuming it's the free plan based on user's info
