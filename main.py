@@ -65,14 +65,10 @@ def calculate_abtest(data: ABTestInput):
     p1 = data.a_success / data.a_total
     p2 = data.b_success / data.b_total
     p_pool = (data.a_success + data.b_success) / (data.a_total + data.b_total)
-    print(f"Debug values: p1={p1}, p2={p2}, p_pool={p_pool}")
-    print(f"Input data: a_success={data.a_success}, a_total={data.a_total}, b_success={data.b_success}, b_total={data.b_total}")
     
     # Защита от отрицательных значений под корнем
     se_term = p_pool * (1 - p_pool) * (1/data.a_total + 1/data.b_total)
-    print(f"SE term before sqrt: {se_term}")
     se = np.sqrt(max(0, se_term)) if se_term > 0 else 0
-    print(f"Final SE: {se}")
     
     z = (p2 - p1) / se if se > 0 else 0
     p_value = 2 * (1 - norm.cdf(abs(z)))
@@ -85,7 +81,7 @@ def calculate_abtest(data: ABTestInput):
         obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
         obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
         delta = pm.Deterministic('delta', p_b - p_a)
-        trace = pm.sample(2000, tune=1000, cores=1, random_seed=42, progressbar=True, return_inferencedata=False)
+        trace = pm.sample(2000, tune=1000, cores=None, random_seed=42, progressbar=True, return_inferencedata=False)
 
     a_samples = trace['p_a']
     b_samples = trace['p_b']
