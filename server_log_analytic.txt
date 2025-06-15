@@ -1,0 +1,24 @@
+INFO:     Started server process [13867]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+[LOG] calculate_abtest: Start
+[LOG] Frequentist calculations: 0.0005s
+[LOG] Bayesian part (Analytic Beta): Start
+[LOG] Posterior A: Beta(101.0, 901.0)
+[LOG] Posterior B: Beta(121.0, 881.0)
+[LOG] Sampling from posterior Beta distributions (N=20000): 0.0055s
+[LOG] Bayesian part (Analytic Beta): Total 0.0055s
+[LOG] Data processing: Start
+[LOG] KDE calculations (a_dist, b_dist): 0.2609s
+[LOG] Bayesian metrics (prob_b_better, means, expected_loss): 0.0007s
+[LOG] Difference distribution calculation: 0.0735s
+[LOG] Histogram calculations: 0.0054s
+[LOG] Data processing: Total 0.3405s
+[LOG] Result preparation: 0.0003s
+[LOG] calculate_abtest: Total execution 0.3469s
+INFO:     127.0.0.1:49012 - "POST /calculate HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [13867]

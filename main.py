@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from scipy.stats import norm, beta
 import numpy as np
 from scipy.stats import gaussian_kde
-import pymc as pm
+# import pymc as pm # Removed
 from fastapi import HTTPException
 import time
 
@@ -78,42 +78,68 @@ def calculate_abtest(data: ABTestInput):
     freq_calc_end_time = time.time()
     print(f"[LOG] Frequentist calculations: {freq_calc_end_time - freq_calc_start_time:.4f}s")
 
+    # --- Bayesian Part (Analytic Beta Distribution) ---
+    bayesian_start_time = time.time() # Используем существующий логгер или добавляем новый
+    print(f"[LOG] Bayesian part (Analytic Beta): Start")
+
+    # Априорные параметры (неинформативный prior Beta(1,1))
+    prior_alpha = 1.0
+    prior_beta = 1.0
+
+    # Вычисление параметров заднего Beta-распределения для варианта A
+    alpha_a_posterior = prior_alpha + data.a_success
+    beta_a_posterior = prior_beta + data.a_total - data.a_success
+
+    # Вычисление параметров заднего Beta-распределения для варианта B
+    alpha_b_posterior = prior_alpha + data.b_success
+    beta_b_posterior = prior_beta + data.b_total - data.b_success
+
+    # Логирование вычисленных параметров (опционально, но полезно для отладки)
+    print(f"[LOG] Posterior A: Beta({alpha_a_posterior}, {beta_a_posterior})")
+    print(f"[LOG] Posterior B: Beta({alpha_b_posterior}, {beta_b_posterior})")
+
+    # Заметка: переменные a_samples и b_samples будут созданы на следующем шаге плана.
+    # На этом шаге мы только вычисляем alpha_a_posterior, beta_a_posterior, alpha_b_posterior, beta_b_posterior.
+
+    sampling_start_time = time.time()
+    N_SAMPLES = 20000 # Количество сэмплов для генерации
+    a_samples = beta.rvs(alpha_a_posterior, beta_a_posterior, size=N_SAMPLES, random_state=42)
+    b_samples = beta.rvs(alpha_b_posterior, beta_b_posterior, size=N_SAMPLES, random_state=42)
+    sampling_end_time = time.time()
+    print(f"[LOG] Sampling from posterior Beta distributions (N={N_SAMPLES}): {sampling_end_time - sampling_start_time:.4f}s")
+
+    bayesian_end_time = time.time() # Завершение всего байесовского блока
+    print(f"[LOG] Bayesian part (Analytic Beta): Total {bayesian_end_time - bayesian_start_time:.4f}s")
+
     # --- Bayesian Part (ADVI) ---
-    bayesian_start_time = time.time()
-    print(f"[LOG] Bayesian part: Start")
-
-    model_block_start_time = time.time()
-    with pm.Model() as model:
-        p_a = pm.Beta('p_a', alpha=1, beta=1)
-        p_b = pm.Beta('p_b', alpha=1, beta=1)
-        obs_a = pm.Binomial('obs_a', n=data.a_total, p=p_a, observed=data.a_success)
-        obs_b = pm.Binomial('obs_b', n=data.b_total, p=p_b, observed=data.b_success)
-        delta = pm.Deterministic('delta', p_b - p_a)
-
-        fit_start_time = time.time()
-        approx = pm.fit(method='advi', n=4000, random_seed=42, progressbar=False) # Set progressbar=False for cleaner logs
-        fit_end_time = time.time()
-        print(f"[LOG] pm.fit(advi, n=4000): {fit_end_time - fit_start_time:.4f}s")
-
-        sample_start_time = time.time()
-        trace = approx.sample(draws=1000, random_seed=42)
-        sample_end_time = time.time()
-        print(f"[LOG] approx.sample(draws=1000): {sample_end_time - sample_start_time:.4f}s")
-    model_block_end_time = time.time()
-    print(f"[LOG] pm.Model block (fit+sample): {model_block_end_time - model_block_start_time:.4f}s")
+    # [LOGS AND PYMC CODE REMOVED AS PER TASK]
+    # Variables like a_samples, b_samples, etc. will be redefined or removed in subsequent steps.
+    # For now, the data processing part that uses them will likely error out if not handled.
+    # The task is to remove the PyMC block first.
 
     # --- Data Processing Part ---
+    # This part will be modified later to use new sample generation
     processing_start_time = time.time()
     print(f"[LOG] Data processing: Start")
 
-    extract_samples_start_time = time.time()
-    a_samples = trace.posterior['p_a'].values.flatten()
-    b_samples = trace.posterior['p_b'].values.flatten()
-    extract_samples_end_time = time.time()
-    print(f"[LOG] Sample extraction: {extract_samples_end_time - extract_samples_start_time:.4f}s")
+    # extract_samples_start_time = time.time() # Removed
+    # a_samples = trace.posterior['p_a'].values.flatten() # Removed
+    # b_samples = trace.posterior['p_b'].values.flatten() # Removed
+    # extract_samples_end_time = time.time() # Removed
+    # print(f"[LOG] Sample extraction: {extract_samples_end_time - extract_samples_start_time:.4f}s") # Removed
 
+    # The following lines will need new a_samples, b_samples or be removed/modified
+    # For now, keeping them commented out or aware they will cause errors
+    # x = np.linspace(0, 1, 300) # Placeholder, will be defined with new samples
+    # a_samples = np.array([]) # Placeholder # REMOVED by new definition above
+    # b_samples = np.array([]) # Placeholder # REMOVED by new definition above
+    x = np.linspace(0, 1, 300) # x will be defined here based on typical [0,1] range for beta distributions
+    # The following lines will need new a_samples, b_samples or be removed/modified
+    # For now, providing dummy values or commenting out to prevent immediate errors
+    # but expecting these to be handled by subsequent sample generation logic.
+    a_dist = []
+    b_dist = []
     kde_calc_start_time = time.time()
-    x = np.linspace(0, 1, 300)
     a_kde = gaussian_kde(a_samples)
     b_kde = gaussian_kde(b_samples)
     a_dist = a_kde(x)
@@ -136,23 +162,47 @@ def calculate_abtest(data: ABTestInput):
 
     diff_dist_start_time = time.time()
     diff_samples = b_samples - a_samples
-    diff_x = np.linspace(np.min(diff_samples), np.max(diff_samples), 100)
-    kde_diff = gaussian_kde(diff_samples)
-    diff_distribution = kde_diff(diff_x)
-    if np.max(diff_distribution) > 0: diff_distribution = diff_distribution / np.max(diff_distribution) # Normalize
+    # Ensure diff_samples is not empty before attempting np.min/np.max
+    if diff_samples.size > 0:
+        diff_x_min = np.min(diff_samples)
+        diff_x_max = np.max(diff_samples)
+        if diff_x_min == diff_x_max: # Avoids issue with linspace if min=max
+            diff_x_min -= 0.01
+            diff_x_max += 0.01
+        diff_x = np.linspace(diff_x_min, diff_x_max, 100)
+        kde_diff = gaussian_kde(diff_samples)
+        diff_distribution = kde_diff(diff_x)
+        if np.max(diff_distribution) > 0: diff_distribution = diff_distribution / np.max(diff_distribution) # Normalize
+    else: # Handle empty diff_samples case
+        diff_x = []
+        diff_distribution = []
     diff_dist_end_time = time.time()
     print(f"[LOG] Difference distribution calculation: {diff_dist_end_time - diff_dist_start_time:.4f}s")
 
     hist_calc_start_time = time.time()
-    bins = 300
-    a_hist, bin_edges = np.histogram(a_samples, bins=bins, range=(0, 1), density=True)
-    b_hist, _ = np.histogram(b_samples, bins=bins, range=(0, 1), density=True)
-    x_hist = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    bins = 300 # Kept for now, might be used by new sample generation
+    # Ensure a_samples and b_samples are not empty before trying to create histograms
+    if a_samples.size > 0:
+        a_hist, bin_edges = np.histogram(a_samples, bins=bins, range=(0, 1), density=True)
+        x_hist = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    else:
+        a_hist = [] # Provide empty lists if no samples
+        x_hist = [] # Ensure x_hist is also empty if a_samples is empty
+        bin_edges = np.linspace(0,1,bins+1) # default bin_edges for x_hist if a_samples is empty
+
+    if b_samples.size > 0:
+        b_hist, _ = np.histogram(b_samples, bins=bins, range=(0, 1), density=True)
+        if not x_hist.size > 0: # if a_samples was empty, x_hist would be empty
+             _, bin_edges_b = np.histogram(b_samples, bins=bins, range=(0, 1), density=True) # need bin_edges for x_hist
+             x_hist = 0.5 * (bin_edges_b[:-1] + bin_edges_b[1:])
+    else:
+        b_hist = []
+
     hist_calc_end_time = time.time()
     print(f"[LOG] Histogram calculations: {hist_calc_end_time - hist_calc_start_time:.4f}s")
 
-    processing_end_time = time.time()
-    print(f"[LOG] Data processing: Total {processing_end_time - processing_start_time:.4f}s")
+    processing_end_time = time.time() # This specific log can remain if data processing part is still meaningful
+    print(f"[LOG] Data processing: Total {processing_end_time - processing_start_time:.4f}s") # This specific log can remain
 
     # --- Return statement ---
     return_prep_start_time = time.time()
