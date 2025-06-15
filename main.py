@@ -91,9 +91,9 @@ def calculate_abtest(data: ABTestInput):
         delta = pm.Deterministic('delta', p_b - p_a)
 
         fit_start_time = time.time()
-        approx = pm.fit(method='advi', n=30000, random_seed=42, progressbar=False) # Set progressbar=False for cleaner logs
+        approx = pm.fit(method='advi', n=4000, random_seed=42, progressbar=False) # Set progressbar=False for cleaner logs
         fit_end_time = time.time()
-        print(f"[LOG] pm.fit(advi, n=30000): {fit_end_time - fit_start_time:.4f}s")
+        print(f"[LOG] pm.fit(advi, n=4000): {fit_end_time - fit_start_time:.4f}s")
 
         sample_start_time = time.time()
         trace = approx.sample(draws=1000, random_seed=42)
